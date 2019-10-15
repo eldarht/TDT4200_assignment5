@@ -1,0 +1,5 @@
+main
+pthread/mandel/mandel
+pthread/mandel/.flags*
+*.o
+*.html
