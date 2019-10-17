@@ -33,8 +33,22 @@ void serial_mxm(const double *A, const double *B, double *C, int m, int n, int k
 
 void omp_mxm(double *A, double *B, double *C, int m, int n, int k)
 {
-  
-  printf("OpenMP version not implemented yet!\n");
+  start = omp_get_wtime();
+
+  int i, j, l;
+
+  #pragma omp parallel for default(shared) private(i, j, l) 
+  for (int i = 0; i < m; i++) {
+    
+    for (int j = 0; j < n; j++) {
+      C[i*n + j] = 0;
+      for (int l = 0; l < k; l++) {
+        C[i*n + j] += A[i*k + l] * B[l*n + j];
+      }
+    }
+  }
+
+  end = omp_get_wtime();
 }
 
 void blas_mxm(double *A, double *B, double *C, int m, int n, int k)

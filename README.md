@@ -52,5 +52,11 @@ I added omp_get_wtime(); at the beginning and end of serial_mxm. All that is wit
 
 The time was: 0.56532
 ## Task 4
+|Baseline| 1 thread | 2 threads | 4 threads | 8 threads | 16 threads |
+|--------|----------|-----------|-----------|-----------|------------|
+| 0.5632s| 	0.562s	|	0.291s	|	0.236s	|	0.228s	| 	0.225s 	 |
+
+The speedup is significant with two threads but does not improve much beyond that. Would have expected more improvement between 2 and 4 threads.
+The default OMP_NUM_THREADS was 4 threads and that is also what was shown with opm_get_num_threads(). 
 
 ## Task 5
