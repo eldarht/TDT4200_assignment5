@@ -4,3 +4,4 @@ pthread/mandel/.flags*
 *.o
 *.html
 pthread/output/mandelnav.bmp
+pthread/output/mandel.bmp

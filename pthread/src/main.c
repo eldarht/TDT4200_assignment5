@@ -35,6 +35,12 @@ typedef struct jobQueue {
 	struct jobQueue *next;
 } jobQueue;
 
+pthread_mutex_t jobQueueLock;
+pthread_cond_t jobAdded;
+pthread_cond_t jobComplete;
+bool isComplete;
+
+unsigned int lockedThreadCount = 0;
 
 // On Error jobQueue will be freed and the application should exit
 void putJob (jobQueue **head, job newJob) {
@@ -71,21 +77,82 @@ void createJob(void (*callback)(dwellType *, unsigned int const, unsigned int co
 			   unsigned int const blockSize)
 {
 	job newJob = { .callback = callback, .dwellBuffer = buffer, .atY = atY, .atX = atX, .blockSize = blockSize };
+	
+	pthread_mutex_lock(&jobQueueLock);
 	putJob(&jobQueueHead, newJob);
+	pthread_cond_signal(&jobAdded);
+	pthread_mutex_unlock(&jobQueueLock);
+
 }
 
 void *worker(void *id) {
 	(void) id;
-	// This could be your pthread function
-	return NULL;
+	while(!isComplete){
+
+		pthread_mutex_lock(&jobQueueLock);
+		while(jobQueueHead == NULL){
+			if(isComplete){
+				pthread_mutex_unlock(&jobQueueLock);
+				return NULL;
+			}else{
+				lockedThreadCount++;
+				pthread_cond_signal(&jobComplete);
+				pthread_cond_wait(&jobAdded, &jobQueueLock);
+				lockedThreadCount--;
+			}
+		}
+
+		job work = popJob(&jobQueueHead);
+		pthread_mutex_unlock(&jobQueueLock);
+
+		work.callback(work.dwellBuffer, work.atY, work.atX, work.blockSize);
+
+	}
+	pthread_mutex_unlock(&jobQueueLock);
+
+	return NULL;	
 }
 
-void initializeWorkers(unsigned int threadsNumber) {
-	(void) threadsNumber;
-	// This could be you initializer function to do all the pthread related stuff.
+void initializeWorkers(unsigned int threadsCount, pthread_t *threadHandles) {
+
+	pthread_cond_init(&jobAdded, NULL);
+	pthread_cond_init(&jobComplete, NULL);
+	pthread_mutex_init(&jobQueueLock, NULL);
+
+	for (unsigned int i = 0; i < threadsCount; ++i)
+	{
+		if(pthread_create(&threadHandles[i], NULL, worker, NULL)) {
+			fprintf(stderr, "Error creating thread\n");
+		}
+	}
+
 }
 
+void finishWorkers(unsigned int threadsCount, pthread_t *threadHandles){
+	
+	pthread_mutex_lock(&jobQueueLock);
+	while(!isComplete){
+		if (lockedThreadCount >= threadsCount)
+		{
+			isComplete = true;
+			pthread_cond_broadcast(&jobAdded);
+			pthread_mutex_unlock(&jobQueueLock);
+			break;
 
+		}else{
+			pthread_mutex_unlock(&jobQueueLock);
+			pthread_cond_wait(&jobComplete, &jobQueueLock);
+		}
+	}
+	for (unsigned int i = 0; i < threadsCount; ++i)
+	{
+		int err = pthread_join(threadHandles[i], NULL);
+		if(err) {
+			fprintf(stderr, "Error joining threads thread: %d\n",err);
+		}
+	}
+	pthread_mutex_destroy(&jobQueueLock);
+}
 /*
    Now the 2 two functions are following which do the computation
    marianiSilver is a subdivsion function computing the Mandelbrot set
@@ -115,7 +182,7 @@ void marianiSilver( dwellType *buffer,
 		unsigned int newBlockSize = blockSize / subdivisions;
 		for (unsigned int ydiv = 0; ydiv < subdivisions; ydiv++) {
 			for (unsigned int xdiv = 0; xdiv < subdivisions; xdiv++) {
-				marianiSilver(buffer, atY + (ydiv * newBlockSize), atX + (xdiv * newBlockSize), newBlockSize);
+				createJob(marianiSilver, buffer, atY + (ydiv * newBlockSize), atX + (xdiv * newBlockSize), newBlockSize);
 			}
 		}
 	}
@@ -127,7 +194,7 @@ void escapeTime( dwellType *buffer,
 				 unsigned int const atX,
 				 unsigned int const blockSize)
 {
-	computeBlock(buffer, atY, atX, blockSize);
+	createJob(computeBlock, buffer, atY, atX, blockSize);
 	if (markBorders)
 		markBorder(buffer, dwellBorderCompute, atY, atX, blockSize);
 }
@@ -288,6 +355,10 @@ int main( int argc, char *argv[] )
 		dwellBuffer[i] = dwellUncomputed;
 	}
 
+	pthread_t *threadHandles = NULL;
+	threadHandles = malloc(useThreads * sizeof(pthread_t));
+	initializeWorkers(useThreads, threadHandles);
+
 	if (useMarianiSilver) {
 		// Scale the blockSize from res up to a subdividable value
 		// Number of possible subdivisions:
@@ -309,6 +380,8 @@ int main( int argc, char *argv[] )
 		}
 	}
 
+	finishWorkers(useThreads, threadHandles);
+	free(threadHandles);
 	// Map dwell buffer to image
 	for (unsigned int y = 0; y < resolution; y++) {
 		for (unsigned int x = 0; x < resolution; x++) {
