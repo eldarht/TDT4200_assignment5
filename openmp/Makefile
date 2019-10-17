@@ -2,7 +2,7 @@
 
 CC=gcc
 FLAGS := -O3
-LINKING := -lblas -fopenmp
+LINKING := -lblas -lcblas -fopenmp
 
 
 .PHONY: serial omp blas omp_test clean

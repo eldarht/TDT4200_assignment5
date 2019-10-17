@@ -60,3 +60,4 @@ The speedup is significant with two threads but does not improve much beyond tha
 The default OMP_NUM_THREADS was 4 threads and that is also what was shown with opm_get_num_threads(). 
 
 ## Task 5
+The cblas function took 0.318s. I would have expected it to be faster, as it is specificly made for matrix computation and intel should have more knowledge about utilizing the cpu for this specific usecase. The OpenMP version is parallelizing a generic for loop and should therefore not have as much domain specific knowledge. I guess the reason for blas to be slower is that it does not know what type of matrix it is, requiering scalars for multiplying the matrixes and row/column major information.
