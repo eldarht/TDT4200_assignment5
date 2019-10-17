@@ -48,7 +48,9 @@ b)
 As the CPU has 4 cores and multithreaded, little benefit can be expected after 8 threads. This seem to fit with the difference in measurments of 8 and 16 threads. The difference between baseline and 1 thread might be due to fewer processes run on the hos system, as the job queue and pthread code should only create overhead and not speed up the application. The most gain is between 1 and 2 threads. Probably as there is less conflict over mutexes. The speedup might be greater with different blocksizes and divisions..
 
 ## Task 3
+I added omp_get_wtime(); at the beginning and end of serial_mxm. All that is within the function was used for the matrix multiplication. We want to test the time of the matrix multiplication, not the time it takes to setput the matrix or the printout.
 
+The time was: 0.56532
 ## Task 4
 
 ## Task 5

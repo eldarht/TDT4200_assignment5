@@ -17,6 +17,8 @@ static double end;
 //Serial version. Do not change this!
 void serial_mxm(const double *A, const double *B, double *C, int m, int n, int k)
 {
+  start = omp_get_wtime();
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
       C[i*n + j] = 0;
@@ -25,10 +27,13 @@ void serial_mxm(const double *A, const double *B, double *C, int m, int n, int k
       }
     }
   }
+
+  end = omp_get_wtime();
 }
 
 void omp_mxm(double *A, double *B, double *C, int m, int n, int k)
 {
+  
   printf("OpenMP version not implemented yet!\n");
 }
 
