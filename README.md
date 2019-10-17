@@ -41,6 +41,12 @@ er does not have the same dwell value. The size of the sections are greater in t
 
 b)
 
+|Baseline| 1 thread | 2 threads | 4 threads | 8 threads | 16 threads |
+|--------|----------|-----------|-----------|-----------|------------|
+| 2.483s | 	2.471s	|	1.541s	|	1.326s	|	1.243s	|	1.264	 |
+
+As the CPU has 4 cores and multithreaded, little benefit can be expected after 8 threads. This seem to fit with the difference in measurments of 8 and 16 threads. The difference between baseline and 1 thread might be due to fewer processes run on the hos system, as the job queue and pthread code should only create overhead and not speed up the application. The most gain is between 1 and 2 threads. Probably as there is less conflict over mutexes. The speedup might be greater with different blocksizes and divisions..
+
 ## Task 3
 
 ## Task 4
