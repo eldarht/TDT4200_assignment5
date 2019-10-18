@@ -108,7 +108,6 @@ void *worker(void *id) {
 		work.callback(work.dwellBuffer, work.atY, work.atX, work.blockSize);
 
 	}
-	pthread_mutex_unlock(&jobQueueLock);
 
 	return NULL;	
 }
@@ -140,7 +139,6 @@ void finishWorkers(unsigned int threadsCount, pthread_t *threadHandles){
 			break;
 
 		}else{
-			pthread_mutex_unlock(&jobQueueLock);
 			pthread_cond_wait(&jobComplete, &jobQueueLock);
 		}
 	}
